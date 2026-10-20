@@ -10,9 +10,12 @@
     "@types/bun": "latest"
   },
   "peerDependencies": {
-    "typescript": "^7"
+    "typescript": "^7.0.2"
   },
   "dependencies": {
-    "rcv-engine": "^1.0.3"
+    "@js-temporal/polyfill": "^0.5.1",
+    "datamark": "^1.0.0",
+    "rcv-engine": "^1.0.3",
+    "zod": "^4.6.7"
   }
 }
