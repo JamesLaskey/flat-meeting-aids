@@ -1,8 +1,9 @@
 // Identifier which maps to a set of privileges
 export type Role = string
+export type ParticipantId = string
 
 export interface Participant {
-    id: string,
+    id: ParticipantId,
     displayName: string,
     roles: Array<Role>,
 }
