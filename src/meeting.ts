@@ -1,12 +1,12 @@
 import type { Participant, Role } from './participants'
 import type { Agenda } from './agenda'
-import type { TimeWarning } from './timekeeping'
+import type { TimeNotification } from './timekeeping'
 import { Temporal } from '@js-temporal/polyfill';
 
 export interface MeetingStructure {
     duration: Temporal.Duration,
     allowedRoles: Array<Role>,
-    timeWarnings: Array<TimeWarning>
+    timeWarnings: Array<TimeNotification>
 }
 
 interface Meeting {

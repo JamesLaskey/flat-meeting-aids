@@ -1,4 +1,5 @@
 import { Temporal } from '@js-temporal/polyfill';
+import { MeetingTimer } from '../src/timekeeping';
 
 // Full meeting timekeeping
 // Given agenda with durations, auto create timers and advance through them
@@ -13,4 +14,8 @@ import { Temporal } from '@js-temporal/polyfill';
 // Add hoc timekeeping utility
 // Create a timer with default warnings at half time and 2 minutes remaining
 // Additional time added and shows over time
-const adhocTimer = MeetingTimer
+const adhocTimer = new MeetingTimer(Temporal.Duration.from({ minutes: 10 }))
+    .warnAtXMinutesBeforeEnd(5)
+    .warnAtXMinutesBeforeEnd(2)
+    .warnAtXMinutesOvertime(2)
+    .start()
