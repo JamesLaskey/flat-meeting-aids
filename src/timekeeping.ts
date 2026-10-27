@@ -1,6 +1,6 @@
 import { Temporal } from '@js-temporal/polyfill';
 
-type TimeoutFn = (callback: () => void, ms: number) => ReturnType<typeof setTimeout>;
+type TimeoutFn = (callback: () => void, ms: number) => string | number | NodeJS.Timeout;
 type ClearTimeoutFn = (id: string | number | NodeJS.Timeout) => void;
 
 export type TimeNotifFn = (t: TimeNotification) => Promise<void>
@@ -38,7 +38,7 @@ export class MeetingTimer {
     warnAtXMinutesBeforeEnd(minutes: number): MeetingTimer {
         const warnTimer: TimeNotification = {
             delay: this.intendedDuration.subtract(Temporal.Duration.from({ minutes: minutes })),
-            genNotifFn: async (t: TimeNotification) {
+            genNotifFn: async (t: TimeNotification) => {
                 console.log("You have %d minutes remaining!", minutes)
             }
         }
@@ -49,7 +49,7 @@ export class MeetingTimer {
     warnAtXMinutesOvertime(minutes: number): MeetingTimer {
         const warnTimer: TimeNotification = {
             delay: this.intendedDuration.add(Temporal.Duration.from({ minutes: minutes })),
-            genNotifFn: async (t: TimeNotification) {
+            genNotifFn: async (t: TimeNotification) => {
                 console.log("You have gone %d minutes over!", minutes);
             }
         }
@@ -89,12 +89,12 @@ class RunningMeetingTimer {
         this.clearTimeoutFn = clearTimeoutFn
         const timerId = this.timeoutFn(async () => {
             await timeExtensionNeededCallback(this)
-        }, intendedDuration.milliseconds)
+        }, intendedDuration.total({ unit: 'milliseconds' }))
         this.timers.push(timerId)
         notifications.forEach((t: TimeNotification) => {
             const timerId = this.timeoutFn(async () => {
                 await t.genNotifFn(t)
-            }, intendedDuration.milliseconds)
+            }, t.delay.total({ unit: 'milliseconds' }))
             this.timers.push(timerId)
         })
     }
