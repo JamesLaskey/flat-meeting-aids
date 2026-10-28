@@ -10,7 +10,7 @@ export interface TimeNotification {
     genNotifFn: TimeNotifFn,
 }
 
-export class MeetingTimer {
+export class MeetingTimerFactory {
     notifications: Array<TimeNotification> = [];
     timeExtensionCallback: (timer: RunningMeetingTimer) => Promise<void> = async (timer:RunningMeetingTimer) => {
     };
@@ -24,18 +24,18 @@ export class MeetingTimer {
         this.intendedDuration = intendedDuration;
     }
 
-    addNotification(notification: TimeNotification): MeetingTimer {
+    addNotification(notification: TimeNotification): MeetingTimerFactory {
         this.notifications.push(notification)
         return this
     }
 
-    setTimeoutFn(timeoutFn: TimeoutFn, clearFn: ClearTimeoutFn): MeetingTimer {
+    setTimeoutFn(timeoutFn: TimeoutFn, clearFn: ClearTimeoutFn): MeetingTimerFactory {
         this.timeoutFn = timeoutFn;
         this.clearTimeoutFn = clearFn
         return this
     }
 
-    warnAtXMinutesBeforeEnd(minutes: number): MeetingTimer {
+    warnAtXMinutesBeforeEnd(minutes: number): MeetingTimerFactory {
         const warnTimer: TimeNotification = {
             delay: this.intendedDuration.subtract(Temporal.Duration.from({ minutes: minutes })),
             genNotifFn: async (t: TimeNotification) => {
@@ -46,7 +46,7 @@ export class MeetingTimer {
         return this
     }
 
-    warnAtXMinutesOvertime(minutes: number): MeetingTimer {
+    warnAtXMinutesOvertime(minutes: number): MeetingTimerFactory {
         const warnTimer: TimeNotification = {
             delay: this.intendedDuration.add(Temporal.Duration.from({ minutes: minutes })),
             genNotifFn: async (t: TimeNotification) => {
