@@ -4,10 +4,56 @@ type TimeoutFn = (callback: () => void, ms: number) => string | number | NodeJS.
 type ClearTimeoutFn = (id: string | number | NodeJS.Timeout) => void;
 
 export type TimeNotifFn = (t: TimeNotification) => Promise<void>
-
 export interface TimeNotification {
     delay: Temporal.Duration,
     genNotifFn: TimeNotifFn,
+}
+
+export class MeetingTimerChain {
+    timeoutFn: TimeoutFn = setTimeout
+    clearTimeoutFn: ClearTimeoutFn = clearTimeout
+    notifications: Array<TimeNotification> = []
+    timerFactories: Array<SingleItemTimerFactory> = []
+    notificationTimers: Array<NodeJS.Timeout | string | number> = []
+    position = 0
+    currentTimer: RunningSingleItemTimer | undefined
+    runningBudget: Temporal.Duration
+
+    constructor(
+        intendedDuration: Temporal.Duration,
+        timers: Array<SingleItemTimerFactory>,
+        notifications?: Array<TimeNotification>,
+    ) {
+        this.timerFactories = timers
+        if (notifications) {
+            this.notifications = notifications
+        }
+        const itemTotalDuration = timers.reduce((acc: Temporal.Duration, item: SingleItemTimerFactory) => {
+            return acc.add(item.intendedDuration)
+        }, new Temporal.Duration())
+        this.runningBudget = intendedDuration.subtract(itemTotalDuration)
+    }
+
+    start() {
+        this.advance()
+        this.notifications.forEach((t: TimeNotification) => {
+            const timerId = this.timeoutFn(async () => {
+                await t.genNotifFn(t)
+            }, t.delay.total({ unit: 'milliseconds' }))
+            this.notificationTimers.push(timerId)
+        })
+    }
+
+    advance() {
+        this.currentTimer?.end()
+        this.runningBudget.subtract(this.currentTimer?.budget ?? new Temporal.Duration())
+        const timerFactory = this.timerFactories.at(this.position)
+        if (!timerFactory) {
+            return
+        }
+        this.currentTimer = timerFactory.start()
+        this.position += 1
+    }
 }
 
 export class SingleItemTimerFactory {
@@ -99,7 +145,7 @@ class RunningSingleItemTimer {
         })
     }
 
-    get overtime(): Temporal.Duration {
+    get budget(): Temporal.Duration {
         return Temporal.Now.instant().since(this.startTime)
     }
 
