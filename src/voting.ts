@@ -14,20 +14,20 @@ interface ElectionResult<T> {
 interface Election<R, B> {
     listChoices(): Set<R>
     runElection(): ElectionResult<R>
-    acceptBallot(ballot: B): Boolean
+    castBallot(ballot: B): Boolean
 }
 
-interface OptInBallot {
+export interface OptInBallot {
     optIn: Participant
 }
-class OptInElection implements Election<Participant, OptInBallot> {
+export class OptInElection implements Election<Participant, OptInBallot> {
     participants: Set<Participant> = new Set()
 
     listChoices(): Set<Participant> {
         return this.participants
     }
 
-    acceptBallot(ballot: OptInBallot): Boolean {
+    castBallot(ballot: OptInBallot): Boolean {
         this.participants.add(ballot.optIn)
         return true
     }
@@ -50,17 +50,17 @@ class OptInElection implements Election<Participant, OptInBallot> {
     }
 }
 
-interface OptOutBallot {
+export interface OptOutBallot {
     optOut: Participant
 }
-class OptOutElection implements Election<Participant, OptOutBallot> {
+export class OptOutElection implements Election<Participant, OptOutBallot> {
     participants: Set<Participant>
 
     constructor(participants: Set<Participant>) {
         this.participants = participants
     }
 
-    acceptBallot(b: OptOutBallot): Boolean {
+    castBallot(b: OptOutBallot): Boolean {
         this.participants.delete(b.optOut)
         return true
     }
@@ -87,12 +87,12 @@ class OptOutElection implements Election<Participant, OptOutBallot> {
     }
 }
 
-type ApprovalVoteEnum = "yay" | "nay"
-interface ApprovalBallot {
+export type ApprovalVoteEnum = "yay" | "nay"
+export interface ApprovalBallot {
     vote: ApprovalVoteEnum
     voter: Participant
 }
-class ApprovalElection implements Election<string, ApprovalBallot> {
+export class ApprovalElection implements Election<string, ApprovalBallot> {
     atIssue: string
     voters: Set<Participant> = new Set()
     yays = 0
@@ -133,7 +133,7 @@ class ApprovalElection implements Election<string, ApprovalBallot> {
             }
         }
     }
-    acceptBallot(ballot: ApprovalBallot): Boolean {
+    castBallot(ballot: ApprovalBallot): Boolean {
         if (this.voters.has(ballot.voter)) {
             return false
         }
@@ -153,12 +153,20 @@ type Candidate = {
     name: string,
     isWriteIn?: boolean,
 }
+export function createRCVCandidate(name: string): Candidate {
+    return {
+        id: crypto.randomUUID(),
+        name: name,
+        isWriteIn: false
+    }
+}
+
 interface RankedBallot {
   id: string;
   rankings: { type: 'candidate'; id: string }[];
 }
 
-class RankedChoiceElection implements Election<Candidate, RankedBallot> {
+export class RankedChoiceElection implements Election<Candidate, RankedBallot> {
     choices: Array<Candidate>
     ballots: Array<Ballot> = []
     constructor(choices: Set<string>) {
@@ -182,10 +190,10 @@ class RankedChoiceElection implements Election<Candidate, RankedBallot> {
             ballots: this.ballots,
             options: {
                 method: 'irv',
-                seats: 0,
+                seats: 1,
                 tieBreak: {
                     strategy: 'random',
-                    seed: ''
+                    seed: 'flat-meeting-aid'
                 },
                 quotaMode: 'static',
                 writeInsAllowed: false
@@ -222,7 +230,7 @@ class RankedChoiceElection implements Election<Candidate, RankedBallot> {
         }
     }
 
-    acceptBallot(ballot: RankedBallot): Boolean {
+    castBallot(ballot: RankedBallot): Boolean {
         if (this.ballots.some((b) => b.id === ballot.id)) {
             return false
         }
