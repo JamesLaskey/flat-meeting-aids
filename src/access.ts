@@ -8,16 +8,18 @@ interface AccessSystem {
     getCapabilities(p: Participant): Array<CapabilityId>
     giveCapability(p: Participant, capName: string): Boolean
     retractCapability(p: Participant, capName: string): Boolean
+    registerRole(r: Role, caps: Set<CapabilityId>): Boolean
     rolesToCapabilities(r: Role): Set<CapabilityId>
     getRoles(p: Participant): Array<Role>
     giveRole(p: Participant, r: Role): Boolean
     retractRole(p: Participant, r: Role): Boolean
 }
 
+type FunctionKey = string
 type CapabilityId = string;
-export type Capability = {readonly name: CapabilityId, readonly functions: Set<any>};
+export type Capability = {readonly name: CapabilityId, readonly functions: Set<FunctionKey>};
 
-export class InMemAccess implements AccessSystem {
+export class InMemAccess implements AccessSystem { 
     participantRolesDB: Map<ParticipantId, Set<Role>> = new Map();
     participantAccessDB: Map<ParticipantId, Set<CapabilityId>> = new Map();
     capabilitiesDB: Map<CapabilityId, Capability> = new Map();
@@ -28,15 +30,18 @@ export class InMemAccess implements AccessSystem {
         this.participantAccessDB.getOrInsert(p.id, new Set())
     } 
 
-    check(p: Participant, requestFn: any): Boolean {
+    check(p: Participant, requestFn: FunctionKey): Boolean {
         const participantCaps = this.participantAccessDB.get(p.id)
-        if (!participantCaps) {
+        if (!participantCaps || participantCaps.size === 0) {
+            console.log("participant not registered")
             return false
         }
-        return participantCaps.keys().some((c: CapabilityId) => {
+        return participantCaps?.keys().some((c: CapabilityId) => {
             return this.capabilitiesDB.get(c)?.functions.keys()
-                .some((capFn: any) => { return requestFn === capFn })
-        })
+                .some((capFn: FunctionKey) => { 
+                    return requestFn === capFn 
+                })
+        }) ?? false
     }
 
     //TODO: Maybe return an Array
@@ -46,7 +51,10 @@ export class InMemAccess implements AccessSystem {
         })
     }
 
-    registerCapability(capName: string, fns: Set<any>): Boolean {
+    registerCapability(capName: string, fns: Set<FunctionKey>): Boolean {
+        if (this.capabilitiesDB.has(capName)) {
+            return false
+        }
         const cap: Capability = {
             name: capName,
             functions: fns,
@@ -75,6 +83,11 @@ export class InMemAccess implements AccessSystem {
             return result
         }
         this.participantAccessDB.set(p.id, pCaps)
+        return true
+    }
+
+    registerRole(r: Role, caps: Set<CapabilityId>): Boolean {
+        this.rolesDB.set(r, caps)
         return true
     }
 
@@ -119,3 +132,6 @@ export class InMemAccess implements AccessSystem {
 }
 
 export var Access: AccessSystem = new InMemAccess()
+export function test_setAccess(a: AccessSystem) {
+    Access = a
+}
