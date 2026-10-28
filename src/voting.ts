@@ -1,5 +1,5 @@
 // Implementations of different voting algorithms
-import { tabulate } from 'rcv-engine';
+import { tabulate, type Ballot} from 'rcv-engine';
 import type { Participant } from './participants';
 import { shuffle } from 'es-toolkit/compat';
 
@@ -7,7 +7,7 @@ class IllegalElectionException extends Error {}
 type ElectionResultEnum = "success" | "tie"
 interface ElectionResult<T> {
     result: ElectionResultEnum,
-    selected: T,
+    selected?: T,
     rankingOfChoices: Array<{choice: T, voteCount: number}>,
 }
 
@@ -107,7 +107,6 @@ class ApprovalElection implements Election<string, ApprovalBallot> {
         if (this.yays === this.nays) {
             return {
                 result: 'tie',
-                selected: '',
                 rankingOfChoices: [
                     {choice: "reject", voteCount: this.nays},
                     {choice: this.atIssue, voteCount: this.yays},
@@ -144,6 +143,90 @@ class ApprovalElection implements Election<string, ApprovalBallot> {
         } else if (ballot.vote === "nay") {
             this.nays += 1
         }
+        return true
+    }
+}
+
+type CandidateId = string
+type Candidate = {
+    id: CandidateId,
+    name: string,
+    isWriteIn?: boolean,
+}
+interface RankedBallot {
+  id: string;
+  rankings: { type: 'candidate'; id: string }[];
+}
+
+class RankedChoiceElection implements Election<Candidate, RankedBallot> {
+    choices: Array<Candidate>
+    ballots: Array<Ballot> = []
+    constructor(choices: Set<string>) {
+        this.choices = choices.keys().map((opt) => {
+            return {
+                id: crypto.randomUUID(),
+                name: opt,
+                isWriteIn: false
+            }
+        }).toArray()
+    }
+
+    listChoices(): Set<Candidate> {
+        return new Set(this.choices)
+    }
+
+    runElection(): ElectionResult<Candidate> {
+        const result = tabulate({
+            schemaVersion: 1,
+            candidates: this.choices,
+            ballots: this.ballots,
+            options: {
+                method: 'irv',
+                seats: 0,
+                tieBreak: {
+                    strategy: 'random',
+                    seed: ''
+                },
+                quotaMode: 'static',
+                writeInsAllowed: false
+            }
+        })
+        if (result.summary.unusualOutcomes.length > 0) {
+            return {
+                result: 'tie',
+                rankingOfChoices: []
+            }
+        }
+        const winnerId = result.winners.at(0)?.candidateId
+        return {
+                result: 'success',
+                selected: this.choices.find((c) => c.id === winnerId),
+                rankingOfChoices: result.winners.map((w) => {
+                    return {
+                        choice: this.choices.find((c) => c.id === w.candidateId)!,
+                        voteCount: Number(BigInt(w.finalTally.numerator) / BigInt(w.finalTally.denominator)),
+                    }
+                })
+            }
+    }
+
+    createBallot(candidateOrder: CandidateId[]): RankedBallot {
+        return {
+            id: crypto.randomUUID(),
+            rankings: candidateOrder.map((id) => {
+                return {
+                    type: 'candidate',
+                    id: id,
+                }
+            })
+        }
+    }
+
+    acceptBallot(ballot: RankedBallot): Boolean {
+        if (this.ballots.some((b) => b.id === ballot.id)) {
+            return false
+        }
+        this.ballots.push(ballot)
         return true
     }
 }
