@@ -1,5 +1,5 @@
 import { Temporal } from '@js-temporal/polyfill';
-import { MeetingTimerFactory } from '../src/timekeeping';
+import { SingleItemTimerFactory } from '../src/timekeeping';
 import { number } from 'zod';
 
 // Full meeting timekeeping
@@ -55,7 +55,7 @@ class FakeClock {
 }
 
 const fakeClock1 = new FakeClock()
-const adhocTimer = new MeetingTimerFactory(Temporal.Duration.from({ minutes: 10 }))
+const adhocTimer = new SingleItemTimerFactory(Temporal.Duration.from({ minutes: 10 }))
     .setTimeoutFn(fakeClock1.fakeSetTimeoutFn, fakeClock1.fakeClearTimeoutFn)
     .warnAtXMinutesBeforeEnd(5)
     .warnAtXMinutesBeforeEnd(2)

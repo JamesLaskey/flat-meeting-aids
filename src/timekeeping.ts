@@ -10,9 +10,9 @@ export interface TimeNotification {
     genNotifFn: TimeNotifFn,
 }
 
-export class MeetingTimerFactory {
+export class SingleItemTimerFactory {
     notifications: Array<TimeNotification> = [];
-    timeExtensionCallback: (timer: RunningMeetingTimer) => Promise<void> = async (timer:RunningMeetingTimer) => {
+    timeExtensionCallback: (timer: RunningSingleItemTimer) => Promise<void> = async (timer:RunningSingleItemTimer) => {
     };
     intendedDuration: Temporal.Duration;
     timeoutFn: TimeoutFn = setTimeout;
@@ -24,18 +24,18 @@ export class MeetingTimerFactory {
         this.intendedDuration = intendedDuration;
     }
 
-    addNotification(notification: TimeNotification): MeetingTimerFactory {
+    addNotification(notification: TimeNotification): SingleItemTimerFactory {
         this.notifications.push(notification)
         return this
     }
 
-    setTimeoutFn(timeoutFn: TimeoutFn, clearFn: ClearTimeoutFn): MeetingTimerFactory {
+    setTimeoutFn(timeoutFn: TimeoutFn, clearFn: ClearTimeoutFn): SingleItemTimerFactory {
         this.timeoutFn = timeoutFn;
         this.clearTimeoutFn = clearFn
         return this
     }
 
-    warnAtXMinutesBeforeEnd(minutes: number): MeetingTimerFactory {
+    warnAtXMinutesBeforeEnd(minutes: number): SingleItemTimerFactory {
         const warnTimer: TimeNotification = {
             delay: this.intendedDuration.subtract(Temporal.Duration.from({ minutes: minutes })),
             genNotifFn: async (t: TimeNotification) => {
@@ -46,7 +46,7 @@ export class MeetingTimerFactory {
         return this
     }
 
-    warnAtXMinutesOvertime(minutes: number): MeetingTimerFactory {
+    warnAtXMinutesOvertime(minutes: number): SingleItemTimerFactory {
         const warnTimer: TimeNotification = {
             delay: this.intendedDuration.add(Temporal.Duration.from({ minutes: minutes })),
             genNotifFn: async (t: TimeNotification) => {
@@ -57,8 +57,8 @@ export class MeetingTimerFactory {
         return this
     }
 
-    start(): RunningMeetingTimer {
-        return new RunningMeetingTimer(
+    start(): RunningSingleItemTimer {
+        return new RunningSingleItemTimer(
             this.timeoutFn,
             this.clearTimeoutFn,
             Temporal.Now.instant(), 
@@ -69,7 +69,7 @@ export class MeetingTimerFactory {
     }
 }
 
-class RunningMeetingTimer {
+class RunningSingleItemTimer {
     startTime: Temporal.Instant
     endTime?: Temporal.Instant
     timers: Array<NodeJS.Timeout | string | number> = []
@@ -82,7 +82,7 @@ class RunningMeetingTimer {
         startTime: Temporal.Instant,
         intendedDuration: Temporal.Duration,
         notifications: Array<TimeNotification>,
-        timeExtensionNeededCallback: (timer: RunningMeetingTimer) => Promise<void>,
+        timeExtensionNeededCallback: (timer: RunningSingleItemTimer) => Promise<void>,
     ) {
         this.startTime = startTime
         this.timeoutFn = timeoutFn
