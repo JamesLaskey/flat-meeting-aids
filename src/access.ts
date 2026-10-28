@@ -1,12 +1,15 @@
 import type { Participant, ParticipantId, Role } from "./participants"
 
 interface AccessSystem {
+    addParticipant(p: Participant): void
     check(p: Participant, requestFn: any): Boolean
     requiredCap(requestFn: any): Capability | undefined
     registerCapability(capName: string, fns: Set<any>): Boolean
+    getCapabilities(p: Participant): Array<CapabilityId>
     giveCapability(p: Participant, capName: string): Boolean
     retractCapability(p: Participant, capName: string): Boolean
     rolesToCapabilities(r: Role): Set<CapabilityId>
+    getRoles(p: Participant): Array<Role>
     giveRole(p: Participant, r: Role): Boolean
     retractRole(p: Participant, r: Role): Boolean
 }
@@ -14,11 +17,16 @@ interface AccessSystem {
 type CapabilityId = string;
 export type Capability = {readonly name: CapabilityId, readonly functions: Set<any>};
 
-class InMemAccess {
+class InMemAccess implements AccessSystem {
     participantRolesDB: Map<ParticipantId, Set<Role>> = new Map();
     participantAccessDB: Map<ParticipantId, Set<CapabilityId>> = new Map();
     capabilitiesDB: Map<CapabilityId, Capability> = new Map();
     rolesDB: Map<Role, Set<CapabilityId>> = new Map();
+
+    addParticipant(p: Participant): void {
+        this.participantRolesDB.getOrInsert(p.id, new Set())
+        this.participantAccessDB.getOrInsert(p.id, new Set())
+    } 
 
     check(p: Participant, requestFn: any): Boolean {
         const participantCaps = this.participantAccessDB.get(p.id)
@@ -52,7 +60,7 @@ class InMemAccess {
         if (!cap) {
             return false
         }
-        this.participantAccessDB.getOrInsert(p.id, new Set()).add(capName)
+        this.participantAccessDB.get(p.id)?.add(capName)
         return true
     }
 
@@ -61,7 +69,7 @@ class InMemAccess {
         if (!cap) {
             return false
         }
-        const pCaps = this.participantAccessDB.getOrInsert(p.id, new Set())
+        const pCaps = this.participantAccessDB.get(p.id) ?? new Set()
         const result = pCaps.delete(capName)
         if (!result) {
             return result
@@ -79,27 +87,34 @@ class InMemAccess {
         this.rolesToCapabilities(r).keys().forEach((capId: CapabilityId) => {
             failures || this.giveCapability(p, capId)
         })
-        this.participantRolesDB.getOrInsert(p.id, new Set()).add(r)
+        this.participantRolesDB.get(p.id)?.add(r)
         return failures
     }
 
     retractRole(p: Participant, r: Role): Boolean {
-        const caps = this.rolesToCapabilities(r)
-        var failures = false
-
-        const pRoles = this.participantRolesDB.getOrInsert(p.id, new Set())
+        const pRoles = this.participantRolesDB.get(p.id) ?? new Set()
+        pRoles.delete(r)
         const capsFromOtherRoles = pRoles.keys().flatMap<CapabilityId>((role: Role) => {
             if (role === r) {
                 return new Set()
             }
             return this.rolesDB.get(role) ?? new Set()
         }).reduce<Set<CapabilityId>>((acc, capId) => { return acc.add(capId) }, new Set())
+        var failures = false
         this.rolesToCapabilities(r).keys().forEach((capId: CapabilityId) => {
             if (!capsFromOtherRoles.has(capId)) {
                 failures || this.retractCapability(p, capId)
             }
         })
-        return true
+        return !failures
+    }
+
+    getCapabilities(p: Participant): Array<CapabilityId> {
+        return this.participantAccessDB.get(p.id)?.keys().toArray() ?? []
+    }
+
+    getRoles(p: Participant): Array<Role> {
+        return this.participantRolesDB.get(p.id)?.keys().toArray() ?? []
     }
 }
 

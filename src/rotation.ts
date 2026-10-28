@@ -4,8 +4,8 @@ import type { Participant, Role } from "./participants";
 type OnActiveFn = (r: Rotation, p: Participant) => void
 type OnInActiveFn = (r: Rotation, p: Participant) => void
 
-class Rotation {
-    currentActive: Participant;
+export class Rotation {
+    currentHolder: Participant;
     participants: Array<Participant>;
     onActive: OnActiveFn;
     onInActive: OnInActiveFn;
@@ -16,24 +16,24 @@ class Rotation {
         onInActive: OnInActiveFn,
     ) {
         this.participants = initialParticipants;
-        this.currentActive = initialParticipants.at(0)!
+        this.currentHolder = initialParticipants.at(0)!
         this.onActive = onActive;
         this.onInActive = onInActive;
     }
 
     advance() {
-        this.finishParticipant();
-        const currentIndex = this.participants.findIndex((p: Participant) => p === this.currentActive)
+        this.finishActive();
+        const currentIndex = this.participants.findIndex((p: Participant) => p === this.currentHolder)
         const nextIndex = (currentIndex + 1) % this.participants.length
-        this.currentActive = this.participants.at(nextIndex)!
+        this.currentHolder = this.participants.at(nextIndex)!
     }
 
-    activateParticipant() {
-        this.onActive(this, this.currentActive)
+    activateCurrent() {
+        this.onActive(this, this.currentHolder)
     }
     
-    finishParticipant() {
-        this.onInActive(this, this.currentActive)
+    finishActive() {
+        this.onInActive(this, this.currentHolder)
     }
 
     addParticipant(p: Participant, position: number) {
@@ -52,7 +52,7 @@ class Rotation {
     }
 }
 
-function rotationForRole(participants: Array<Participant>, role: Role): Rotation {
+export function rotationForRole(participants: Array<Participant>, role: Role): Rotation {
     return new Rotation(
         participants,
         (r: Rotation, p: Participant) => {
