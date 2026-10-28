@@ -17,7 +17,7 @@ interface AccessSystem {
 type CapabilityId = string;
 export type Capability = {readonly name: CapabilityId, readonly functions: Set<any>};
 
-class InMemAccess implements AccessSystem {
+export class InMemAccess implements AccessSystem {
     participantRolesDB: Map<ParticipantId, Set<Role>> = new Map();
     participantAccessDB: Map<ParticipantId, Set<CapabilityId>> = new Map();
     capabilitiesDB: Map<CapabilityId, Capability> = new Map();
