@@ -4,10 +4,12 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "typecheck": "bun check"
+    "typecheck": "bun check",
+    "test": "vitest"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "vitest": "^5.0.5"
   },
   "peerDependencies": {
     "typescript": "^7.0.2"
