@@ -7,6 +7,7 @@
       "dependencies": {
         "@js-temporal/polyfill": "^0.5.1",
         "datamark": "^1.0.0",
+        "es-toolkit": "^1.53.0",
         "rcv-engine": "^1.0.3",
         "zod": "^4.6.7",
       },
@@ -68,6 +69,8 @@
     "bun-types": ["bun-types@1.4.3", "", { "dependencies": { "@types/node": "*", "undici-types": "*" } }, "sha512-tinRJNGOmUN+tEAsn2y2e942n9JHRHR42iUYzDH75NmhJqVBokGSQkkfSFdNWwsANIdrK6ACH9t01M452YyTwg=="],
 
     "datamark": ["datamark@1.0.0", "", { "dependencies": { "marked": "^18.0.0", "yaml": "^2.9.0" }, "peerDependencies": { "typescript": "^5.0.0" } }, "sha512-hud3G7dEY50O3gdNMLx/rRxL4MrRB7oYoG/jH3h/soTFDO0rgt828YSrof/zxixX8hScYdaPkB//PHy4/AsABA=="],
+
+    "es-toolkit": ["es-toolkit@1.53.0", "", {}, "sha512-3+AYXp9fmJ/UhHBMYj2/U+RaUouMD90SzoItyDOB2Za7W6dB7fQApFGnZPl2MF6K8/Tv1koh1JyirSx/kju6Pw=="],
 
     "jsbi": ["jsbi@4.3.2", "", {}, "sha512-9fqMSQbhJykSeii05nxKl4m6Eqn2P6rOlYiS+C5Dr/HPIU/7yZxu5qzbs40tgaFORiw2Amd0mirjxatXYMkIew=="],
 

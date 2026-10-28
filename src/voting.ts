@@ -1,7 +1,9 @@
 // Implementations of different voting algorithms
 import { tabulate } from 'rcv-engine';
 import type { Participant } from './participants';
+import { shuffle } from 'es-toolkit/compat';
 
+class IllegalElectionException extends Error {}
 type ElectionResultEnum = "success" | "tie"
 interface ElectionResult<T> {
     result: ElectionResultEnum,
@@ -31,7 +33,20 @@ class OptInElection implements Election<Participant, OptInBallot> {
     }
 
     runElection(): ElectionResult<Participant> {
-        throw new Error('Method not implemented.');
+        const ordering = shuffle(this.participants.keys().toArray())
+        if (ordering.length === 0) {
+            throw new IllegalElectionException()
+        }
+        return {
+            result: 'success',
+            selected: ordering.at(0)!,
+            rankingOfChoices: ordering.map((p) => {
+                return {
+                    choice: p,
+                    voteCount: 1
+                }
+            })
+        }
     }
 }
 
@@ -55,7 +70,20 @@ class OptOutElection implements Election<Participant, OptOutBallot> {
     }
 
     runElection(): ElectionResult<Participant> {
-        throw new Error('Method not implemented.');
+        const ordering = shuffle(this.participants.keys().toArray())
+        if (ordering.length === 0) {
+            throw new IllegalElectionException()
+        }
+        return {
+            result: 'success',
+            selected: ordering.at(0)!,
+            rankingOfChoices: ordering.map((p) => {
+                return {
+                    choice: p,
+                    voteCount: 1
+                }
+            })
+        }
     }
 }
 
