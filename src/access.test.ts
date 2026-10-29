@@ -31,10 +31,30 @@ test("InMemAccess_giveCap_participantHasCap", () => {
 
     Access.giveCapability(alice, "canCallFoo")
 
+    expect(Access.getCapabilities(alice)).toContain("canCallFoo")
+})
+
+test("InMemAccess_giveCap_participantCanUseCap", () => {
+    test_setAccess(new InMemAccess())
+    Access.registerCapability("canCallFoo", new Set(["foo"]))
+    const alice = createParticipant("Alice", [])
+
+    Access.giveCapability(alice, "canCallFoo")
+
     expect(Access.check(alice, "foo")).toBe(true)
 })
 
 test("InMemAccess_giveRoleDuringParticipantCreation_participantHasRole", () => {
+    test_setAccess(new InMemAccess())
+    Access.registerCapability("canCallFoo", new Set(["foo"]))
+    Access.registerRole("fooer", new Set(["canCallFoo"]))
+
+    const alice = createParticipant("Alice", ["fooer"])
+
+    expect(Access.getRoles(alice)).toContain("fooer")
+})
+
+test("InMemAccess_giveRoleDuringParticipantCreation_participantCanUseRole", () => {
     test_setAccess(new InMemAccess())
     Access.registerCapability("canCallFoo", new Set(["foo"]))
     Access.registerRole("fooer", new Set(["canCallFoo"]))
