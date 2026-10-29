@@ -6,14 +6,14 @@ type SpeakerMetadata = {
     timeSpentTalking: Temporal.Duration,
     timesJoined: number
 }
-type TopicId = string
+export type TopicId = string
 type Topic = {
     id: TopicId
     initiator: Participant,
     description: string,
     queue: Array<Participant>,
 }
-class DiscussionQueue {
+export class DiscussionQueue {
     allParticipants: Map<Participant, SpeakerMetadata>
     topics: Array<Topic> = []
     lastSpeaker: {speaker: Participant, startTime: Temporal.Instant} | undefined
@@ -59,11 +59,22 @@ class DiscussionQueue {
             return t.id === topic
         })
 
-        this.topics.filter((t) => {
-            return t.id === topic
+        this.topics = this.topics.filter((t) => {
+            return t.id !== topic
         })
         
         return toFinish?.queue ?? []
+    }
+
+    private advanceQueue(topic: Topic): Participant | undefined {
+        const nextSpeaker = first(topic.queue)
+        if (!nextSpeaker) {
+            return undefined            
+        }
+
+        const remainingQueue = drop(topic.queue, 1)
+        topic.queue = remainingQueue
+        return nextSpeaker
     }
 
     nextSpeaker(): Participant | undefined {
@@ -76,22 +87,26 @@ class DiscussionQueue {
             stats.timeSpentTalking.add(timeSpent)
             stats.timesJoined += 1
         }
-        const topic = first(this.topics)
+        var topic = first(this.topics)
         if (!topic) {
+            this.lastSpeaker = undefined
             return undefined
         }
-        const nextSpeaker = first(topic.queue)
-        if (!nextSpeaker) {
-            // This shouldn't happen!
-            console.log("speaker order has gotten corrupted and topic not closed when queue empty")
+
+        var nextSpeaker = this.advanceQueue(topic)
+        var panicSearchDepth = 0
+        while (!nextSpeaker && this.topics.length > 0 && panicSearchDepth++ < 500) {
             this.closeTopic(topic.id)
-            return undefined
+            topic = first(this.topics)                
+            if (!topic) {
+                this.lastSpeaker = undefined
+                return undefined
+            }
+            nextSpeaker = this.advanceQueue(topic)
         }
-        const remainingQueue = drop(topic.queue, 1)
-        if (remainingQueue.length === 0) {
-            this.topics = drop(this.topics, 1)
-        } else {
-            topic.queue = remainingQueue
+        if (!nextSpeaker) {
+            this.lastSpeaker = undefined
+            return undefined    
         }
         this.lastSpeaker = {
             speaker: nextSpeaker,
