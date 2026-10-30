@@ -39,19 +39,22 @@ export class DiscussionQueue {
         return topic.id
     }
 
-    addToTopic(participant: Participant, topic: TopicId) {
+    addToTopic(participant: Participant, topic: TopicId): Boolean {
         const queue = this.topics.find((t) => t.id === topic)?.queue
         // Cannot be in the queue for the same topic multiple times
         if (queue?.some((p) => p.id === participant.id)) {
-            return
+            return false
         }
         queue?.push(participant)
+        return true
     }
 
-    dropFromTopicQueue(participant: Participant, topic: TopicId) {
-        this.topics
-            .find((t) => t.id === topic)?.queue
-            .filter((p) => p.id === participant.id)
+    dropFromTopicQueue(participant: Participant, topicId: TopicId) {
+        const topic = this.topics
+            .find((t) => t.id === topicId)
+        if (topic) {
+            topic.queue = topic.queue.filter((p) => p.id !== participant.id)
+        }
     }
 
     closeTopic(topic: TopicId): Array<Participant> {
