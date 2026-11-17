@@ -1,6 +1,6 @@
 import type { Participant, ParticipantId, Role } from "./participants"
 
-interface AccessSystem {
+export interface AccessSystem {
     addParticipant(p: Participant): void
     check(p: Participant, requestFn: any): Boolean
     requiredCap(requestFn: any): Capability | undefined
